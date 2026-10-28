@@ -28,6 +28,16 @@ public class VersusPatches
         VersusLocal.ResetLocal();
     }
 
+    // Our IMGUI windows behave like the game's own menus: free cursor, no character input.
+    [HarmonyPatch(typeof(GUIManager), nameof(GUIManager.UpdateWindowStatus))]
+    [HarmonyPostfix]
+    static void UpdateWindowStatusPostfix(GUIManager __instance)
+    {
+        if (!VersusHud.IsAnyWindowOpen) { return; }
+        __instance.windowShowingCursor = true;
+        __instance.windowBlockingInput = true;
+    }
+
     // ---------- Versus items ----------
 
     [HarmonyPatch(typeof(Item), nameof(Item.GetItemName))]

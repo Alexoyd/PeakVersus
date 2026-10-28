@@ -62,22 +62,11 @@ public class VersusHud : MonoBehaviour
     }
 
     bool AnyWindowOpen => shopOpen || godOpen || chronicleOpen;
-    bool wasWindowOpen;
+    public static bool IsAnyWindowOpen => instance != null && instance.AnyWindowOpen;
 
     void Update()
     {
         toasts.RemoveAll(t => Time.time > t.until);
-        if (AnyWindowOpen)
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-        }
-        else if (wasWindowOpen)
-        {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-        }
-        wasWindowOpen = AnyWindowOpen;
         Character me = Character.localCharacter;
         if (shopOpen && (me == null || !VersusLocal.InTruce(me.Center))) { shopOpen = false; }
         if (infiniteStamina && me != null && !me.data.dead) { me.AddStamina(1f); }
