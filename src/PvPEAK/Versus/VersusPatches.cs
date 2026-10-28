@@ -122,6 +122,18 @@ public class VersusPatches
         VersusHud.Toast("Piton défectueux posé : il cassera sous un adversaire", 3f);
     }
 
+    // ---------- falls from Versus traps ----------
+
+    [HarmonyPatch(typeof(CharacterClimbing), "TryToStartWallClimb")]
+    [HarmonyPrefix]
+    static bool TryToStartWallClimbPrefix(CharacterClimbing __instance, bool forceAttempt)
+    {
+        if (!__instance.character.IsLocal) { return true; }
+        if (Time.time < VersusLocal.noGrabUntil) { return false; }
+        if (forceAttempt && Time.time < VersusLocal.noAutoGrabUntil) { return false; }
+        return true;
+    }
+
     // ---------- help detection (vanilla helping hand) ----------
 
     [HarmonyPatch(typeof(CharacterGrabbing), "Reach")]

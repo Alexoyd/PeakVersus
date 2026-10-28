@@ -525,18 +525,25 @@ public class VersusLocal : MonoBehaviour
         if (ropeTimer > RopeBreakAfter)
         {
             ropeTimer = 0f;
-            rope.photonView.RPC("Detach_Rpc", RpcTarget.AllBuffered, 0f);
             FallOffWall(me);
+            rope.photonView.RPC("Detach_Rpc", RpcTarget.AllBuffered, 0f);
             VersusNet.ToMaster(nameof(VersusNet.RPC_ClearSabotage), id);
             VersusNet.ToMaster(nameof(VersusNet.RPC_Note), $"{VersusGame.State.NameOf(VersusGame.LocalUser)} a grimpé sur une corde sabotée");
         }
     }
 
-    // Without a short ragdoll the game instantly re-grabs the wall and the trap does nothing.
+    // The game force-grabs the wall when a handle breaks, which cancels the trap.
+    // Grabbing stays possible, but only as a deliberate climb input after a short window.
+    public static float noGrabUntil;
+    public static float noAutoGrabUntil;
+    const float NoGrabWindow = 0.3f;
+    const float NoAutoGrabWindow = 1.5f;
+
     static void FallOffWall(Character me)
     {
+        noGrabUntil = Time.time + NoGrabWindow;
+        noAutoGrabUntil = Time.time + NoAutoGrabWindow;
         me.refs.climbing.StopAnyClimbing();
-        me.Fall(1.2f);
     }
 
     void UpdateDefectivePiton(Character me)
@@ -566,8 +573,8 @@ public class VersusLocal : MonoBehaviour
         if (pitonTimer > PitonBreakAfter)
         {
             pitonTimer = 0f;
-            VersusNet.ToAll(nameof(VersusNet.RPC_BreakPiton), view.ViewID);
             FallOffWall(me);
+            VersusNet.ToAll(nameof(VersusNet.RPC_BreakPiton), view.ViewID);
             VersusNet.ToMaster(nameof(VersusNet.RPC_ClearPiton), view.ViewID);
             VersusNet.ToMaster(nameof(VersusNet.RPC_Note), $"{VersusGame.State.NameOf(VersusGame.LocalUser)} s'est accroché à un piton défectueux");
         }
