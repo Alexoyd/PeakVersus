@@ -52,45 +52,46 @@ public partial class Plugin : BaseUnityPlugin
         Logger = base.Logger;
         Logger.LogInfo($"Plugin {Id} is loaded!");
         ConfigurationHandler = new ConfigurationHandler(Config);
+        Versus.VersusLocal.Create();
         //NetworkingUtilities.MAX_PLAYERS = ConfigurationHandler.MaxPlayers;
         // Harmony.DEBUG = true;
 
         //Extra marshmallow and backpack patches
-        _harmony.PatchAll(typeof(CampfireAwakePatch));
-        _harmony.PatchAll(typeof(OnPlayerLeftRoomPatch));
-        _harmony.PatchAll(typeof(OnPlayerEnteredRoomPatch));
+        SafePatch(typeof(CampfireAwakePatch));
+        SafePatch(typeof(OnPlayerLeftRoomPatch));
+        SafePatch(typeof(OnPlayerEnteredRoomPatch));
         Plugin.Logger.LogInfo("Marshmallow patches successful!");
 
 
         //In-game message patches
-        _harmony.PatchAll(typeof(PlayerConnectionLogPatch));
-        _harmony.PatchAll(typeof(InitializationPatch));
-        _harmony.PatchAll(typeof(LeaveLobbyPatch));
+        SafePatch(typeof(PlayerConnectionLogPatch));
+        SafePatch(typeof(InitializationPatch));
+        SafePatch(typeof(LeaveLobbyPatch));
         Plugin.Logger.LogInfo("Player connection log patches successful!");
 
         //PvPeak Patches
-        _harmony.PatchAll(typeof(SingleItemSpawnerTrySpawnItemsPatch));
-        _harmony.PatchAll(typeof(StartGamePatch));
-        _harmony.PatchAll(typeof(PlayerAddItemPatch));
-        _harmony.PatchAll(typeof(ItemInteractablePatch));
-        _harmony.PatchAll(typeof(ItemInteractPatch));
-        _harmony.PatchAll(typeof(NetworkingPatch));
-        _harmony.PatchAll(typeof(StatuePatch));
-        _harmony.PatchAll(typeof(CampfireZonePatch));
-        _harmony.PatchAll(typeof(RopePatch));
-        _harmony.PatchAll(typeof(EndGamePatch));
-        _harmony.PatchAll(typeof(MassAfflictionPatch));
-        _harmony.PatchAll(typeof(ProgressPatch));
-        _harmony.PatchAll(typeof(ScoutmasterPatch));
-        _harmony.PatchAll(typeof(MoraleBoostPatch));
-        _harmony.PatchAll(typeof(Versus.VersusPatches));
-        Versus.VersusLocal.Create();
+        SafePatch(typeof(SingleItemSpawnerTrySpawnItemsPatch));
+        SafePatch(typeof(StartGamePatch));
+        SafePatch(typeof(PlayerAddItemPatch));
+        SafePatch(typeof(ItemInteractablePatch));
+        SafePatch(typeof(ItemInteractPatch));
+        SafePatch(typeof(NetworkingPatch));
+        SafePatch(typeof(StatuePatch));
+        SafePatch(typeof(CampfireZonePatch));
+        SafePatch(typeof(RopePatch));
+        SafePatch(typeof(EndGamePatch));
+        SafePatch(typeof(MassAfflictionPatch));
+        SafePatch(typeof(ProgressPatch));
+        SafePatch(typeof(ScoutmasterPatch));
+        SafePatch(typeof(MoraleBoostPatch));
+        SafePatch(typeof(Versus.VersusPatches));
+
         Utility.CreateLocalization();
 
         Plugin.Logger.LogInfo("PvPeak patches successful!");
 
-        //_harmony.PatchAll(typeof(SkipIntroPatch));
-        //_harmony.PatchAll(typeof(PeakGamingPatch));
+        //SafePatch(typeof(SkipIntroPatch));
+        //SafePatch(typeof(PeakGamingPatch));
         //_toggleCheatsAction = new InputAction("ToggleCheats", (InputActionType)1, "<Keyboard>/k", (string)null, (string)null, (string)null);
         //_toggleCheatsAction.performed += delegate
         //{
@@ -102,13 +103,25 @@ public partial class Plugin : BaseUnityPlugin
         if (PEAKUnlimitedInfo != null)
         {
             Logger.LogInfo($"PEAKUnlimited found: {PEAKUnlimitedInfo}. Patching for compatibility.");
-            _harmony.PatchAll(typeof(PeakUnlimitedCompatPatch));
+            SafePatch(typeof(PeakUnlimitedCompatPatch));
         }
         else
         {
             Logger.LogInfo($"PEAKUnlimited not found; not patching");
         }
         
+    }
+
+    private void SafePatch(System.Type patchClass)
+    {
+        try
+        {
+            _harmony.PatchAll(patchClass);
+        }
+        catch (System.Exception e)
+        {
+            Logger.LogError($"Patches in {patchClass.Name} failed, the rest of the mod keeps loading: {e}");
+        }
     }
 
     public static void ToggleCheats()

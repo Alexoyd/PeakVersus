@@ -121,7 +121,7 @@ internal class EndGamePatch
 
     [HarmonyPatch(typeof(Character), nameof(Character.RPCA_Die))]
     [HarmonyPostfix]
-    static void CharacterRPCA_DiePostfix(Character __instance, Vector3 itemSpawnPoint)
+    static void CharacterRPCA_DiePostfix(Character __instance)
     {
         if (!Plugin.ItsPvPEAK) { return; }
         Plugin.deathMapping[__instance] = Time.time;

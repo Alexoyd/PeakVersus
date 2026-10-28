@@ -139,9 +139,9 @@ public class VersusPatches
 
     [HarmonyPatch(typeof(Character), nameof(Character.RPCA_Die))]
     [HarmonyPostfix]
-    static void DiePostfix(Character __instance, Vector3 itemSpawnPoint)
+    static void DiePostfix(Character __instance)
     {
-        VersusLocal.deathPosition[__instance] = itemSpawnPoint;
+        VersusLocal.deathPosition[__instance] = __instance.Center;
         if (VersusGame.Active && __instance.IsLocal)
         {
             VersusNet.ToMaster(nameof(VersusNet.RPC_ReportDeath), VersusGame.LocalUser);
