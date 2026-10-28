@@ -157,6 +157,7 @@ public class VersusLocal : MonoBehaviour
         if (KeyPressed(Plugin.ConfigurationHandler.PushKey)) { TryPush(me); }
         if (KeyPressed(Plugin.ConfigurationHandler.AnkleKey)) { TryAnkleGrab(me); }
 
+        if (voluntaryGrabOnly && Time.time > noGrabUntil && (me.data.isGrounded || me.data.isClimbing)) { voluntaryGrabOnly = false; }
         UpdateAnkleReaction(me);
         UpdateHeldItem(me);
         UpdateSabotagedRope(me);
@@ -535,14 +536,14 @@ public class VersusLocal : MonoBehaviour
     // The game force-grabs the wall when a handle breaks, which cancels the trap.
     // Grabbing stays possible, but only as a deliberate climb input after a short window.
     public static float noGrabUntil;
-    public static float noAutoGrabUntil;
-    const float NoGrabWindow = 0.3f;
-    const float NoAutoGrabWindow = 1.5f;
+    // Until the player lands or grabs on purpose, only a deliberate climb press can grab the wall.
+    public static bool voluntaryGrabOnly;
+    const float NoGrabWindow = 0.55f;
 
     static void FallOffWall(Character me)
     {
         noGrabUntil = Time.time + NoGrabWindow;
-        noAutoGrabUntil = Time.time + NoAutoGrabWindow;
+        voluntaryGrabOnly = true;
         me.refs.climbing.StopAnyClimbing();
     }
 

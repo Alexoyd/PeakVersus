@@ -130,7 +130,7 @@ public class VersusPatches
     {
         if (!__instance.character.IsLocal) { return true; }
         if (Time.time < VersusLocal.noGrabUntil) { return false; }
-        if (forceAttempt && Time.time < VersusLocal.noAutoGrabUntil) { return false; }
+        if (VersusLocal.voluntaryGrabOnly && (forceAttempt || __instance.character.data.sincePressClimb >= 0.1f)) { return false; }
         return true;
     }
 
