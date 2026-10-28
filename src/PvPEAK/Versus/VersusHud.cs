@@ -133,6 +133,10 @@ public class VersusHud : MonoBehaviour
         VersusItemKind held = VersusItems.HeldKind(me);
         if (held != VersusItemKind.None) { lines.Add($"<color=#ccffcc>{VersusItems.DisplayName(held)} : {VersusItems.Description(held)}</color>"); }
         foreach (string line in VersusLocal.magnifierLines) { lines.Add($"<color=#ffee88>{line}</color>"); }
+        if (VersusLocal.Instance != null && VersusLocal.Instance.scissorsProgress > 0f)
+        {
+            lines.Add($"{(VersusLocal.Instance.scissorsSabotage ? "Sabotage" : "Coupe")} : {VersusLocal.Instance.scissorsProgress:0.0} / {(VersusLocal.Instance.scissorsSabotage ? 3 : 2)} s");
+        }
         if (VersusLocal.Instance != null && VersusLocal.Instance.incenseProgress > 0f) { lines.Add($"Incantation : {VersusLocal.Instance.incenseProgress:0.0} / 10 s"); }
         lines.Add($"<size=12>[{Plugin.ConfigurationHandler.PushKey}] pousser  [{Plugin.ConfigurationHandler.AnkleKey}] cheville  [{Plugin.ConfigurationHandler.ShopKey}] boutique  [{Plugin.ConfigurationHandler.ChronicleKey}] scores</size>");
         string text = string.Join("\n", lines);

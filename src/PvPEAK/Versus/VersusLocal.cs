@@ -48,6 +48,11 @@ public class VersusLocal : MonoBehaviour
     Vector3 ankleDirection;
     string ankleAttacker = "";
     public float incenseProgress;
+    public float scissorsProgress;
+    public bool scissorsSabotage;
+    Rope? scissorsRope;
+    float nextTint;
+    readonly HashSet<int> tintedItems = new();
     float ropeTimer;
     bool ropeCracked;
     float pitonTimer;
@@ -125,6 +130,7 @@ public class VersusLocal : MonoBehaviour
         if (KeyPressed(Plugin.ConfigurationHandler.GodMenuKey)) { VersusHud.ToggleGod(); }
         if (KeyPressed(Plugin.ConfigurationHandler.ChronicleKey)) { VersusHud.ToggleChronicle(); }
 
+        UpdateTints();
         Character me = Character.localCharacter;
         if (me == null || !VersusGame.Active) { return; }
 
@@ -307,6 +313,7 @@ public class VersusLocal : MonoBehaviour
     {
         VersusItemKind held = VersusItems.HeldKind(me);
         if (held != VersusItemKind.Incense) { incenseProgress = 0f; }
+        if (held != VersusItemKind.Scissors) { scissorsProgress = 0f; }
         magnifierLines.Clear();
 
         switch (held)
@@ -314,12 +321,98 @@ public class VersusLocal : MonoBehaviour
             case VersusItemKind.Incense:
                 UpdateIncense(me);
                 break;
+            case VersusItemKind.Scissors:
+                UpdateScissors(me);
+                break;
             case VersusItemKind.CampfireTrap:
                 if (me.input.usePrimaryWasPressed) { ArmTrap(me); }
                 break;
             case VersusItemKind.Magnifier:
                 ScanWithMagnifier(me);
                 break;
+        }
+    }
+
+    static Rope? RopeInSight()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) { return null; }
+        RaycastHit[] hits = Physics.RaycastAll(cam.transform.position, cam.transform.forward, 4f, ~0, QueryTriggerInteraction.Collide);
+        foreach (RaycastHit hit in hits.OrderBy(h => h.distance))
+        {
+            Rope rope = hit.collider.GetComponentInParent<Rope>();
+            if (rope != null && rope.attachmenState == Rope.ATTACHMENT.anchored && !rope.isHelicopterRope)
+            {
+                return rope;
+            }
+        }
+        return null;
+    }
+
+    void UpdateScissors(Character me)
+    {
+        bool cut = me.input.usePrimaryIsPressed;
+        bool sabotage = me.input.useSecondaryIsPressed && !cut;
+        if (!cut && !sabotage)
+        {
+            scissorsProgress = 0f;
+            return;
+        }
+        Rope? rope = RopeInSight();
+        if (rope == null)
+        {
+            if (me.input.usePrimaryWasPressed || me.input.useSecondaryWasPressed) { VersusHud.Toast("Vise une corde ancrée, à moins de 3 m", 2f); }
+            scissorsProgress = 0f;
+            return;
+        }
+        if (InTruce(rope.transform.position) || InTruce(me.Center))
+        {
+            if (me.input.usePrimaryWasPressed || me.input.useSecondaryWasPressed) { VersusHud.Toast("Trêve du feu de camp : pas de sabotage ici", 2f); }
+            scissorsProgress = 0f;
+            return;
+        }
+        if (rope != scissorsRope || sabotage != scissorsSabotage)
+        {
+            scissorsRope = rope;
+            scissorsSabotage = sabotage;
+            scissorsProgress = 0f;
+        }
+        scissorsProgress += Time.deltaTime;
+        if (scissorsProgress < (sabotage ? 3f : 2f)) { return; }
+        scissorsProgress = 0f;
+        if (sabotage)
+        {
+            VersusNet.ToMaster(nameof(VersusNet.RPC_MarkSabotage), rope.photonView.ViewID, MyTeam);
+            VersusHud.Toast("Corde sabotée : elle lâchera sous un adversaire", 3f);
+        }
+        else
+        {
+            rope.photonView.RPC("Detach_Rpc", RpcTarget.AllBuffered, 0f);
+            VersusHud.Toast("Corde coupée !", 2f);
+        }
+        VersusItems.ConsumeHeld(me, useCharges: true);
+    }
+
+    void UpdateTints()
+    {
+        if (Time.time < nextTint) { return; }
+        nextTint = Time.time + 1f;
+        foreach (Item item in FindObjectsByType<Item>(FindObjectsSortMode.None))
+        {
+            if (item == null || item.data == null || tintedItems.Contains(item.GetInstanceID())) { continue; }
+            Color? tint = VersusItems.Tint(VersusItems.GetKind(item));
+            if (tint == null) { continue; }
+            tintedItems.Add(item.GetInstanceID());
+            foreach (Renderer renderer in item.GetComponentsInChildren<Renderer>(true))
+            {
+                foreach (Material material in renderer.materials)
+                {
+                    foreach (string property in new[] { "_BaseColor", "_Color", "_MainColor", "_Tint" })
+                    {
+                        if (material.HasProperty(property)) { material.SetColor(property, Color.Lerp(material.GetColor(property), tint.Value, 0.75f)); }
+                    }
+                }
+            }
         }
     }
 

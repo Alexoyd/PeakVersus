@@ -38,13 +38,33 @@ public static class VersusItems
 
     public static string Description(VersusItemKind kind) => kind switch
     {
-        VersusItemKind.Scissors => "[E] sur une corde : couper. Accroupi + [E] : saboter (elle lâchera sous un adversaire).",
+        VersusItemKind.Scissors => "Vise une corde ancrée : clic gauche maintenu = couper (2 s), clic droit maintenu = saboter (3 s, elle lâchera sous un adversaire).",
         VersusItemKind.DefectivePiton => "Se plante comme un piton. Craque puis casse sous le poids d'un adversaire.",
         VersusItemKind.Magnifier => "Tenue en main : révèle cordes sabotées, pitons défectueux et feux piégés. Dans l'inventaire : désamorce les pièges de feu.",
         VersusItemKind.Incense => "Maintenir [clic gauche] 10 s : ranime un joueur mort à l'endroit de sa mort.",
         VersusItemKind.CampfireTrap => "[Clic gauche] près d'un feu : le piège pour l'équipe adverse.",
         _ => "",
     };
+
+    // Defective pitons keep the vanilla look on purpose: only the magnifier gives them away.
+    public static Color? Tint(VersusItemKind kind) => kind switch
+    {
+        VersusItemKind.Scissors => new Color(0.95f, 0.2f, 0.2f),
+        VersusItemKind.Magnifier => new Color(1f, 0.85f, 0.2f),
+        VersusItemKind.Incense => new Color(0.65f, 0.3f, 1f),
+        VersusItemKind.CampfireTrap => new Color(1f, 0.5f, 0.1f),
+        _ => null,
+    };
+
+    static bool loggedItemNames;
+
+    public static void LogItemNamesOnce()
+    {
+        if (loggedItemNames) { return; }
+        loggedItemNames = true;
+        string names = string.Join(", ", SingletonAsset<ItemDatabase>.Instance.itemLookup.OrderBy(e => e.Key).Where(e => e.Value != null).Select(e => $"{e.Key}:{e.Value.name}"));
+        Plugin.Logger.LogInfo($"PEAK Versus item list: {names}");
+    }
 
     public static VersusItemKind GetKind(ItemInstanceData? data)
     {
@@ -101,6 +121,7 @@ public static class VersusItems
     public static bool TryGetBaseItem(VersusItemKind kind, out ushort itemID)
     {
         if (baseItems.TryGetValue(kind, out itemID)) { return true; }
+        LogItemNamesOnce();
         Dictionary<ushort, Item> lookup = SingletonAsset<ItemDatabase>.Instance.itemLookup;
         Func<Item, bool>[] matchers = kind switch
         {
