@@ -526,9 +526,17 @@ public class VersusLocal : MonoBehaviour
         {
             ropeTimer = 0f;
             rope.photonView.RPC("Detach_Rpc", RpcTarget.AllBuffered, 0f);
+            FallOffWall(me);
             VersusNet.ToMaster(nameof(VersusNet.RPC_ClearSabotage), id);
             VersusNet.ToMaster(nameof(VersusNet.RPC_Note), $"{VersusGame.State.NameOf(VersusGame.LocalUser)} a grimpé sur une corde sabotée");
         }
+    }
+
+    // Without a short ragdoll the game instantly re-grabs the wall and the trap does nothing.
+    static void FallOffWall(Character me)
+    {
+        me.refs.climbing.StopAnyClimbing();
+        me.Fall(1.2f);
     }
 
     void UpdateDefectivePiton(Character me)
@@ -559,6 +567,7 @@ public class VersusLocal : MonoBehaviour
         {
             pitonTimer = 0f;
             VersusNet.ToAll(nameof(VersusNet.RPC_BreakPiton), view.ViewID);
+            FallOffWall(me);
             VersusNet.ToMaster(nameof(VersusNet.RPC_ClearPiton), view.ViewID);
             VersusNet.ToMaster(nameof(VersusNet.RPC_Note), $"{VersusGame.State.NameOf(VersusGame.LocalUser)} s'est accroché à un piton défectueux");
         }
