@@ -82,7 +82,7 @@ internal class RopePatch
     {
         if (!Plugin.ItsPvPEAK) { return; }
         // Ropes may not be real remotely, so we need to destroy the fake ones and make a new one to fall.
-        if (!__instance.view.IsMine && __instance.spool == null)
+        if (!__instance.photonView.IsMine && __instance.spool == null)
         {
             int segmentCount = __instance.remoteColliderSegments.Count;
             if (segmentCount > 0)

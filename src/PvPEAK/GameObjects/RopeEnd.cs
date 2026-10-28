@@ -81,7 +81,7 @@ public class RopeEnd : MonoBehaviour, IInteractibleConstant, IInteractible
 
     public void Interact_CastFinished(Character interactor)
     {
-        this.rope.view.RPC("Detach_Rpc", RpcTarget.AllBuffered, 0f);
+        this.rope.photonView.RPC("Detach_Rpc", RpcTarget.AllBuffered, 0f);
     }
 
     public void CancelCast(Character interactor)

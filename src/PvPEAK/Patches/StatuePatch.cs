@@ -39,13 +39,16 @@ public class StatuePatch
     [HarmonyTranspiler]
     static IEnumerable<CodeInstruction> SpawnItemsTranspiler(IEnumerable<CodeInstruction> instructions)
     {
-        // This one specific instance of spawn items doesn't return the items spanwed??? ytho???
-        CodeMatcher matcher = new CodeMatcher(instructions);
-        // Skip scout respawning. This is done unconditionally; try to find a way to not do this when mod is disabled.
-        List<Label> labels = matcher.MatchStartForward(new CodeMatch(OpCodes.Brfalse)).MatchStartBackwards(OpCodes.Call).Labels;
-        matcher.RemoveInstruction().Insert(CodeInstruction.Call(() => CheckSkipRespawn())).AddLabels(labels);
-        // Fix the code not returning the spawned items, for some reason
-        matcher.MatchStartForward(new CodeMatch(OpCodes.Pop)).SetOpcodeAndAdvance(OpCodes.Stloc_0);
+        // Skip scout respawning by replacing the Ascents.canReviveDead check.
+        // The game now returns the spawned items itself, so the old Pop -> Stloc_0 fix is no longer needed.
+        CodeMatcher matcher = new CodeMatcher(instructions)
+            .MatchStartForward(new CodeMatch(OpCodes.Call, AccessTools.PropertyGetter(typeof(Ascents), nameof(Ascents.canReviveDead))));
+        if (matcher.IsInvalid)
+        {
+            Plugin.Logger.LogError("StatuePatch: Ascents.canReviveDead call not found, statue respawn left untouched.");
+            return instructions;
+        }
+        matcher.SetInstruction(CodeInstruction.Call(() => CheckSkipRespawn()).MoveLabelsFrom(matcher.Instruction));
         return matcher.Instructions();
     }
 
