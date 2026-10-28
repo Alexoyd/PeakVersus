@@ -41,13 +41,13 @@ public class InitializationPatch
         GameObject buttonsHolder = __instance.transform.Find("Menu/Buttons").gameObject;
         GameObject buttonPrefab = buttonsHolder.transform.Find("Button_PlayWithFriends").gameObject;
         PvPEAKButton = Object.Instantiate(buttonPrefab, buttonsHolder.transform);
-        PvPEAKButton.name = "Button_PvPEAK";
+        PvPEAKButton.name = "Button_PeakVersus";
         RectTransform transform = PvPEAKButton.transform as RectTransform;
         PvPEAKButton.transform.position += new Vector3(0, transform.sizeDelta[1] * buttonsHolder.transform.lossyScale[1], 0);
         GameObject hinge = PvPEAKButton.transform.Find("Hinge").gameObject;
         GameObject text = hinge.transform.Find("Text").gameObject;
         GameObject icons = hinge.transform.Find("Icons").gameObject;
-        text.GetComponent<LocalizedText>().SetText("Host PvPEAK");
+        text.GetComponent<LocalizedText>().SetText("Host PEAK Versus");
         foreach (Image image in icons.transform.GetComponentsInChildren<Image>().Skip(2))
         {
             image.transform.localEulerAngles += new Vector3(0, 180, 0);
@@ -76,7 +76,7 @@ public class InitializationPatch
     {
         // Stupid fix for localization not existing. Should probably just add it to all languages, but oh well.
         GameObject text = PvPEAKButton.transform.Find("Hinge/Text").gameObject;
-        text.GetComponent<LocalizedText>().SetText("Host PvPEAK");
+        text.GetComponent<LocalizedText>().SetText("Host PEAK Versus");
     }
 
     //[HarmonyPatch(typeof(GameHandler), nameof(GameHandler.Awake))]

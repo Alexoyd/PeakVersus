@@ -1,4 +1,4 @@
-﻿using BepInEx.Logging;
+using BepInEx.Logging;
 using HarmonyLib;
 using PvPEAK.Model;
 using Photon.Pun;
@@ -49,12 +49,7 @@ public class ItemInteractablePatch
             //UnlimitedLogger.GetInstance().DebugMessage(LogLevel.Info, DebugLogType.CampfireLogic, $"Not after awake");
             return true;
         }
-        if (Plugin.teamTracker.GetPlayerTeam(__instance.character.player) != Plugin.teamTracker.GetPlayerTeam(interactor.player))
-        {
-            //UnlimitedLogger.GetInstance().DebugMessage(LogLevel.Info, DebugLogType.CampfireLogic, $"Backpack is not on your team");
-            __result = false;
-            return false;
-        }
+        // PEAK Versus: enemies may open your backpack from behind (vanilla rule); VersusPatches makes it noisy.
         return true;
     }
 

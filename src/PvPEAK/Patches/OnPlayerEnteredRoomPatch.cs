@@ -37,10 +37,10 @@ public class OnPlayerEnteredRoomPatch
             Plugin.Logger.LogInfo("Starting warn player");
             if (version == null)
             {
-                log.AddMessage($"{log.GetColorTag(log.leftColor)} Player {log.GetColorTag(log.userColor)} {newPlayer.NickName} {log.GetColorTag(log.leftColor)} dose not have PvPEAK installed! Behavior will be undefined, things will break.");
+                log.AddMessage($"{log.GetColorTag(log.leftColor)} Player {log.GetColorTag(log.userColor)} {newPlayer.NickName} {log.GetColorTag(log.leftColor)} n'a pas PEAK Versus installé ! Behavior will be undefined, things will break.");
             } else
             {
-                log.AddMessage($"{log.GetColorTag(log.leftColor)} Player {log.GetColorTag(log.userColor)} {newPlayer.NickName} {log.GetColorTag(log.leftColor)} is using different version of PvPEAK. Your version: {Plugin.Version}; Their version: {version}. Behavior will be undefined, things may break.");
+                log.AddMessage($"{log.GetColorTag(log.leftColor)} Player {log.GetColorTag(log.userColor)} {newPlayer.NickName} {log.GetColorTag(log.leftColor)} utilise une autre version de PEAK Versus. Your version: {Plugin.Version}; Their version: {version}. Behavior will be undefined, things may break.");
             }   
         }
     }

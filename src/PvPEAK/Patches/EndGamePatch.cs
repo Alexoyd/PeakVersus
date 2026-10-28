@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using PvPEAK.GameObjects;
 using PvPEAK.Model;
 using Photon.Pun;
@@ -131,13 +131,7 @@ internal class EndGamePatch
     [HarmonyPrefix]
     static bool CheckWinConditionPrefix(ref bool __result, Character c)
     {
-        if (!Plugin.ItsPvPEAK) { return true; }
-        if (Plugin.winningTeam == null) { return true; }
-        if (!Plugin.winningTeam.HasPlayer(c.player.photonView.Owner))
-        {
-            __result = false;
-            return false;
-        }
+        // PEAK Versus: everyone at the peak when the countdown ends escapes, so the pact (all 4) or a brawl decides.
         return true;
     }
 
@@ -147,8 +141,8 @@ internal class EndGamePatch
     static bool PeakSequenceStartPrefix(PeakSequence __instance)
     {
         if (!Plugin.ItsPvPEAK) { return true; }
-        // In our version, youn can't leave until your whole team is in range anyway, so no need for the 30 second countdown.
-        __instance.totalSeconds = __instance.totalWinningSeconds;
+        // PEAK Versus: a longer countdown leaves time for the other team to arrive (pact) or for a brawl.
+        __instance.totalSeconds = Plugin.ConfigurationHandler.PeakCountdown;
         return true;
     }
     

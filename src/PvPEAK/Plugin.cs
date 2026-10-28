@@ -1,4 +1,4 @@
-﻿using BepInEx;
+using BepInEx;
 using BepInEx.Bootstrap;
 using BepInEx.Logging;
 using HarmonyLib;
@@ -83,6 +83,8 @@ public partial class Plugin : BaseUnityPlugin
         _harmony.PatchAll(typeof(ProgressPatch));
         _harmony.PatchAll(typeof(ScoutmasterPatch));
         _harmony.PatchAll(typeof(MoraleBoostPatch));
+        _harmony.PatchAll(typeof(Versus.VersusPatches));
+        Versus.VersusLocal.Create();
         Utility.CreateLocalization();
 
         Plugin.Logger.LogInfo("PvPeak patches successful!");

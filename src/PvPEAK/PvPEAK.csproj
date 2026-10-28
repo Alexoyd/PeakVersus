@@ -4,11 +4,11 @@
     <!-- This is the most appropriate target framework for the game's Unity version. -->
     <TargetFramework>netstandard2.1</TargetFramework>
     <!-- This is the GUID of your mod. Example: com.github.YourAccount.BepInExTemplate -->
-    <AssemblyName>com.github.HuFlungDu.PvPEAK</AssemblyName>
+    <AssemblyName>com.github.Alexoyd.PeakVersus</AssemblyName>
     <!-- This is the display name of your mod. Example: BepInEx Template -->
-    <AssemblyTitle>PvPEAK</AssemblyTitle>
+    <AssemblyTitle>PEAK Versus</AssemblyTitle>
     <!-- This is the version number of your mod. -->
-    <Version>1.1.0</Version>
+    <Version>0.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
