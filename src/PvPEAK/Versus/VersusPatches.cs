@@ -93,22 +93,31 @@ public class VersusPatches
     {
         ItemSlot slot = __instance.currentClimbingSpikeItemSlot;
         pendingDefective = slot != null && VersusItems.GetKind(slot.data) == VersusItemKind.DefectivePiton;
+        Plugin.Logger.LogInfo($"Hammering piton, defective: {pendingDefective}");
         pendingTeam = pendingDefective ? VersusGame.TeamKey(__instance.character) : "";
     }
 
     [HarmonyPatch(typeof(CharacterItems), "HammerClimbingSpike")]
     [HarmonyPostfix]
-    static void HammerPostfix(RaycastHit hit)
+    static void HammerPostfix()
     {
-        if (!pendingDefective) { return; }
         pendingDefective = false;
-        Vector3 point = hit.point;
-        ClimbHandle? placed = Object.FindObjectsByType<ClimbHandle>(FindObjectsSortMode.None)
-            .OrderBy(h => Vector3.Distance(h.transform.position, point))
-            .FirstOrDefault();
-        if (placed == null || Vector3.Distance(placed.transform.position, point) > 1.5f) { return; }
-        PhotonView view = placed.GetComponentInParent<PhotonView>();
-        if (view == null) { return; }
+    }
+
+    // The hammered piton is spawned inside HammerClimbingSpike: catch the exact object it creates.
+    [HarmonyPatch(typeof(PhotonNetwork), nameof(PhotonNetwork.InstantiateItemRoom))]
+    [HarmonyPostfix]
+    static void InstantiateItemRoomPostfix(GameObject __result)
+    {
+        if (!pendingDefective || __result == null) { return; }
+        pendingDefective = false;
+        PhotonView view = __result.GetComponent<PhotonView>() ?? __result.GetComponentInChildren<PhotonView>();
+        if (view == null)
+        {
+            Plugin.Logger.LogWarning($"Defective piton {__result.name} has no PhotonView");
+            return;
+        }
+        Plugin.Logger.LogInfo($"Defective piton placed: {__result.name} view {view.ViewID} team {pendingTeam}");
         VersusNet.ToMaster(nameof(VersusNet.RPC_MarkPiton), view.ViewID, pendingTeam);
         VersusHud.Toast("Piton défectueux posé : il cassera sous un adversaire", 3f);
     }

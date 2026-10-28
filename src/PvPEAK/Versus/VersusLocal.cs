@@ -351,8 +351,8 @@ public class VersusLocal : MonoBehaviour
 
     void UpdateScissors(Character me)
     {
-        bool cut = me.input.usePrimaryIsPressed;
-        bool sabotage = me.input.useSecondaryIsPressed && !cut;
+        bool sabotage = me.input.usePrimaryIsPressed;
+        bool cut = me.input.useSecondaryIsPressed && !sabotage;
         if (!cut && !sabotage)
         {
             scissorsProgress = 0f;
@@ -541,7 +541,13 @@ public class VersusLocal : MonoBehaviour
             pitonCracked = false;
             return;
         }
-        if (!VersusGame.State.defectivePitons.TryGetValue(view.ViewID, out string team) || !VersusGame.IsEnemy(MyTeam, team)) { return; }
+        if (pitonTimer == 0f) { Plugin.Logger.LogInfo($"Hanging on handle view {view.ViewID}, defective: {VersusGame.State.defectivePitons.ContainsKey(view.ViewID)}"); }
+        if (!VersusGame.State.defectivePitons.TryGetValue(view.ViewID, out string team) || !VersusGame.IsEnemy(MyTeam, team))
+        {
+            pitonTimer = -1f;
+            return;
+        }
+        if (pitonTimer < 0f) { pitonTimer = 0f; }
         pitonTimer += Time.deltaTime;
         if (pitonTimer > PitonCrackAfter && !pitonCracked)
         {

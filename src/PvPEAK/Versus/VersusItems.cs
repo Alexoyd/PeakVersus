@@ -38,7 +38,7 @@ public static class VersusItems
 
     public static string Description(VersusItemKind kind) => kind switch
     {
-        VersusItemKind.Scissors => "Vise une corde ancrée : clic gauche maintenu = couper (2 s), clic droit maintenu = saboter (3 s, elle lâchera sous un adversaire).",
+        VersusItemKind.Scissors => "Vise une corde ancrée : clic gauche maintenu = entailler (3 s, elle lâchera sous un adversaire), clic droit maintenu = couper (2 s).",
         VersusItemKind.DefectivePiton => "Se plante comme un piton. Craque puis casse sous le poids d'un adversaire.",
         VersusItemKind.Magnifier => "Tenue en main : révèle cordes sabotées, pitons défectueux et feux piégés. Dans l'inventaire : désamorce les pièges de feu.",
         VersusItemKind.Incense => "Maintenir [clic gauche] 10 s : ranime un joueur mort à l'endroit de sa mort.",
