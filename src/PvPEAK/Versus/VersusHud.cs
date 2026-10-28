@@ -215,6 +215,18 @@ public class VersusHud : MonoBehaviour
         GUI.DragWindow();
     }
 
+    void GiveVanillaButton(string label, System.Func<Item, bool> match)
+    {
+        if (!GUILayout.Button(label)) { return; }
+        KeyValuePair<ushort, Item> entry = SingletonAsset<ItemDatabase>.Instance.itemLookup.OrderBy(e => e.Key).FirstOrDefault(e => e.Value != null && match(e.Value));
+        if (entry.Value == null)
+        {
+            Toast($"Objet introuvable : {label}", 2f);
+            return;
+        }
+        VersusNet.ToMaster(nameof(VersusNet.RPC_GodGiveVanilla), VersusGame.LocalUser, (int)entry.Key);
+    }
+
     void DrawGod(int id)
     {
         string user = VersusGame.LocalUser;
@@ -246,6 +258,14 @@ public class VersusHud : MonoBehaviour
             ushort bingBong = SingletonAsset<ItemDatabase>.Instance.itemLookup.FirstOrDefault(e => e.Value != null && e.Value.itemTags.HasFlag(Item.ItemTags.BingBong)).Key;
             VersusNet.ToMaster(nameof(VersusNet.RPC_GodGiveVanilla), user, (int)bingBong);
         }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Label("<b>Objets du jeu utiles aux tests</b>", labelStyle);
+        GUILayout.BeginHorizontal();
+        GiveVanillaButton("Piton normal", i => i.GetComponent<ClimbingSpikeComponent>() != null);
+        GiveVanillaButton("Corde", i => i.GetComponent<RopeSpool>() != null);
+        GiveVanillaButton("Lance-corde", i => i.GetComponent<RopeShooter>() != null);
+        GiveVanillaButton("Effigie de scout", i => i.GetComponent<ScoutEffigy>() != null);
         GUILayout.EndHorizontal();
 
         GUILayout.Label("<b>Triche</b>", labelStyle);
