@@ -32,6 +32,7 @@ public class VersusLocal : MonoBehaviour
     const float AnkleImmunity = 4f;
     const float IncenseChannel = 10f;
     const float ArrivalRadius = 10f;
+    const float TrapArmMeters = 15f;
     const float RopeCrackAfter = 2.5f;
     const float RopeBreakAfter = 3.5f;
     const float PitonCrackAfter = 0.8f;
@@ -115,7 +116,7 @@ public class VersusLocal : MonoBehaviour
 
     static bool IsCampfireUsable(Campfire campfire)
     {
-        return campfire != null && campfire.transform.parent != null && !campfire.transform.parent.name.ToLower().Contains("wings");
+        return campfire != null && (campfire.transform.parent == null || !campfire.transform.parent.name.ToLower().Contains("wings"));
     }
 
     public static int CampfireID(Campfire campfire)
@@ -460,9 +461,15 @@ public class VersusLocal : MonoBehaviour
     void ArmTrap(Character me)
     {
         Campfire? nearest = Plugin.CampfireList.Where(IsCampfireUsable).OrderBy(c => Vector3.Distance(c.transform.position, me.Center)).FirstOrDefault();
-        if (nearest == null || Vector3.Distance(nearest.transform.position, me.Center) > 6f)
+        if (nearest == null)
         {
-            VersusHud.Toast("Approche-toi d'un feu de camp pour le piéger", 2f);
+            VersusHud.Toast("Aucun feu de camp piégeable sur cette carte (le feu de départ ne compte pas)", 3f);
+            return;
+        }
+        float meters = Vector3.Distance(nearest.transform.position, me.Center) * CharacterStats.unitsToMeters;
+        if (meters > TrapArmMeters)
+        {
+            VersusHud.Toast($"Approche-toi du feu pour le piéger (feu le plus proche : {meters:0} m, il faut moins de {TrapArmMeters:0} m)", 3f);
             return;
         }
         int id = CampfireID(nearest);
