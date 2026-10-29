@@ -47,7 +47,25 @@ public static class VersusGame
     public static string TeamName(string team)
     {
         if (team == "") { return "Sans équipe"; }
-        return $"<color=#{team}>Équipe {team}</color>";
+        return $"<color=#{team}>Équipe {ColorName(team)}</color>";
+    }
+
+    // Scout colours are arbitrary RGB values: name them by hue so players can read them.
+    public static string ColorName(string team)
+    {
+        if (!ColorUtility.TryParseHtmlString("#" + team, out Color color)) { return team; }
+        Color.RGBToHSV(color, out float h, out float s, out float v);
+        if (v < 0.2f) { return "Noire"; }
+        if (s < 0.2f) { return v > 0.8f ? "Blanche" : "Grise"; }
+        float deg = h * 360f;
+        if (deg < 15f || deg >= 340f) { return "Rouge"; }
+        if (deg < 45f) { return "Orange"; }
+        if (deg < 70f) { return "Jaune"; }
+        if (deg < 160f) { return "Verte"; }
+        if (deg < 200f) { return "Turquoise"; }
+        if (deg < 255f) { return "Bleue"; }
+        if (deg < 290f) { return "Violette"; }
+        return "Rose";
     }
 
     // Solo test mode lets your own traps, ropes and pitons hit you.
