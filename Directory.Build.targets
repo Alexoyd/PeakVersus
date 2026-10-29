@@ -12,8 +12,8 @@
     </RestoreAdditionalProjectSources>
   </PropertyGroup>
 
-  <!-- Modding dependencies -->
-  <ItemGroup>
+  <!-- Modding dependencies (not for helper tools such as the installer) -->
+  <ItemGroup Condition="'$(IsPeakMod)' != 'false'">
     <PackageReference Include="BepInEx.Core" Version="5.4.21" />
     <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
     <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.3" PrivateAssets="all" />
@@ -21,12 +21,12 @@
   </ItemGroup>
 
   <!-- NuGet fallback stripped game references -->
-  <ItemGroup Condition="!Exists('$(ManagedDir)')">
+  <ItemGroup Condition="!Exists('$(ManagedDir)') And '$(IsPeakMod)' != 'false'">
     <PackageReference Include="UnityEngine.Modules" Version="6000.0.36" PrivateAssets="all" />
   </ItemGroup>
 
   <!-- Local game references -->
-  <ItemGroup Condition="Exists('$(ManagedDir)')">
+  <ItemGroup Condition="Exists('$(ManagedDir)') And '$(IsPeakMod)' != 'false'">
     <!--
       Reference all assemblies except ones that come
       with our target framework or would cause conflicts

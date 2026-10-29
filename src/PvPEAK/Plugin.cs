@@ -16,8 +16,6 @@ namespace PvPEAK;
 // This BepInAutoPlugin attribute comes from the Hamunii.BepInEx.AutoPlugin
 // NuGet package, and it will generate the BepInPlugin attribute for you!
 // For more info, see https://github.com/Hamunii/BepInEx.AutoPlugin
-[BepInDependency(SoftDependencyFix.Plugin.Id)]
-[BepInDependency(PEAKUnlimited.Plugin.Id, DependencyFlags.SoftDependency)]
 [BepInAutoPlugin]
 public partial class Plugin : BaseUnityPlugin
 {
@@ -99,17 +97,6 @@ public partial class Plugin : BaseUnityPlugin
         //};
         //_toggleCheatsAction.Enable();
 
-        Chainloader.PluginInfos.TryGetValue(PEAKUnlimited.Plugin.Id, out PluginInfo PEAKUnlimitedInfo);
-        if (PEAKUnlimitedInfo != null)
-        {
-            Logger.LogInfo($"PEAKUnlimited found: {PEAKUnlimitedInfo}. Patching for compatibility.");
-            SafePatch(typeof(PeakUnlimitedCompatPatch));
-        }
-        else
-        {
-            Logger.LogInfo($"PEAKUnlimited not found; not patching");
-        }
-        
     }
 
     private void SafePatch(System.Type patchClass)

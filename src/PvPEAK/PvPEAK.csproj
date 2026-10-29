@@ -12,9 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="glarmer-PEAK_Unlimited" Version="*" Private="False" />
     <PackageReference Include="HarmonyX" Version="2.9.0" />
-    <PackageReference Include="PEAKModding-SoftDependencyFix" Version="1.0.0" Private="False" />
   </ItemGroup>
 
   <ItemGroup>

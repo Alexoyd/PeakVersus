@@ -5,15 +5,14 @@ schemaVersion = "0.0.1"
 repository = "https://thunderstore.io"
 
 [package]
-namespace = "PvPEAK"
-name = "PvPEAK"
-description = "Ever wanted to hurt your fellow scouts but felt bad because it wasn't legally sanctioned?"
-websiteUrl = "https://github.com/HuFlungDu/PvPEAK/"
+namespace = "Alexoyd"
+name = "PeakVersus"
+description = "Mode 2v2 : deux duos, une montagne. Cordes sabotées, feux piégés, chevilles tirées, dettes d'honneur et trahisons."
+websiteUrl = "https://github.com/Alexoyd/PeakVersus/"
 containsNsfwContent = false
 
 [package.dependencies]
 BepInEx-BepInExPack_PEAK = "5.4.2403"
-PEAKModding-SoftDependencyFix = "1.0.0"
 
 [build]
 icon = "../../icon.png"
@@ -21,7 +20,7 @@ readme = "../../README.md"
 outdir = "../../artifacts/thunderstore/"
 
 [[build.copy]]
-source = "../../artifacts/bin/PvPEAK/release/com.github.HuFlungDu.PvPEAK.dll"
+source = "../../artifacts/bin/PvPEAK/release/com.github.Alexoyd.PeakVersus.dll"
 target = "plugins/"
 
 [[build.copy]]

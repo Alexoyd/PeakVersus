@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- .NET Framework 4.8 ships with Windows, so the exe runs without installing anything. -->
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>PeakVersus-Setup</AssemblyName>
+    <RootNamespace>PeakVersusInstaller</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <IsPeakMod>false</IsPeakMod>
+    <ThunderstorePackable>false</ThunderstorePackable>
+    <ModDll>$(SolutionRoot)artifacts/bin/PvPEAK/$(Configuration.ToLower())/com.github.Alexoyd.PeakVersus.dll</ModDll>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+  </ItemGroup>
+
+  <!-- Build the mod first, then embed its DLL in the installer. -->
+  <ItemGroup>
+    <ProjectReference Include="../PvPEAK/PvPEAK.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
+    <EmbeddedResource Include="$(ModDll)" LogicalName="PeakVersus.dll" />
+  </ItemGroup>
+
+</Project>
