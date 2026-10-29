@@ -160,6 +160,7 @@ public static partial class VersusGame
         TrapType.SpringLog => "Bûche-ressort",
         TrapType.Famine => "Fringale",
         TrapType.TellTaleSmoke => "Fumée révélatrice",
+        TrapType.FrozenFire => "Feu gelé",
         _ => "?",
     };
 
@@ -516,7 +517,7 @@ public static partial class VersusGame
             Announce("Ce feu est déjà piégé", 3f, user);
             return;
         }
-        TrapType type = (TrapType)Random.Range(0, 5);
+        TrapType type = (TrapType)Random.Range(0, 6);
         State.traps.Add(new TrapRecord { campfire = campfire, team = State.TeamOf(user), type = type });
         Announce($"Feu piégé : « {TrapName(type)} » attend l'équipe adverse", 5f, user);
         State.chronicle.Add($"{State.NameOf(user)} a piégé un feu de camp (« {TrapName(type)} »)");

@@ -151,6 +151,15 @@ public class VersusLocal : MonoBehaviour
 
     static string MyTeam => Character.localCharacter != null ? VersusGame.TeamKey(Character.localCharacter) : "";
 
+    public static bool LocalFireFrozen
+    {
+        get
+        {
+            string team = MyTeam;
+            return team != "" && VersusGame.State.effects.Any(e => e.team == team && e.type == TrapType.FrozenFire);
+        }
+    }
+
     static bool IsCampfireUsable(Campfire campfire)
     {
         return campfire != null && (campfire.transform.parent == null || !campfire.transform.parent.name.ToLower().Contains("wings"));
@@ -776,6 +785,14 @@ public class VersusLocal : MonoBehaviour
                     break;
                 case TrapType.TellTaleSmoke:
                     VersusHud.Toast("Ta fumée colorée trahit ta position", 1.5f);
+                    break;
+                case TrapType.FrozenFire:
+                    // Mild chill by the fire instead of warmth: annoying, never deadly on its own.
+                    if (NearCampfire(me.Center))
+                    {
+                        me.refs.afflictions.AddStatus(CharacterAfflictions.STATUSTYPE.Cold, 0.025f);
+                        VersusHud.Toast("Brrr… ce feu est glacé", 1.5f);
+                    }
                     break;
             }
         }

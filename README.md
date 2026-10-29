@@ -37,7 +37,7 @@ Les feux de camp sont des **zones de trêve** : aucune attaque à moins de 15 m.
 | **Ciseaux** | Clic gauche maintenu : **entailler** une corde (elle lâchera sous un adversaire). Clic droit maintenu : la couper. |
 | **Piton défectueux** | Se plante comme un vrai. Craque puis casse sous le poids d'un adversaire. |
 | **Loupe** | Révèle cordes sabotées, pitons défectueux et feux piégés (avec leur type). Dans l'inventaire, elle désamorce les pièges de feu. |
-| **Piège de feu** | Piège un feu pour l'équipe adverse : hoquet, poil à gratter, bûche-ressort, fringale ou fumée révélatrice, jusqu'au feu suivant. |
+| **Piège de feu** | Piège un feu pour l'équipe adverse : hoquet, poil à gratter, bûche-ressort, fringale, fumée révélatrice ou feu gelé (les feux ne réchauffent ni ne soignent plus), jusqu'au feu suivant. |
 | **Encens du retour** | Très rare. 10 s d'incantation pour ranimer un joueur à l'endroit de sa mort, même un adversaire. |
 | **Reliques** | Cachées hors du chemin dans chaque biome. Rapportez-les à un feu. |
 | **Bing Bong** | La mascotte. Le porter jusqu'à un feu rapporte des points. Volez-le. |

@@ -2,6 +2,7 @@ using System.Linq;
 using HarmonyLib;
 using Photon.Pun;
 using UnityEngine;
+using Zorro.Core;
 
 namespace PvPEAK.Versus;
 
@@ -36,6 +37,41 @@ public class VersusPatches
         if (!VersusHud.IsAnyWindowOpen) { return; }
         __instance.windowShowingCursor = true;
         __instance.windowBlockingInput = true;
+    }
+
+    // ---------- frozen fire trap ----------
+
+    // The fire no longer keeps hunger away for the trapped team; the fog still waits for everyone resting.
+    [HarmonyPatch(typeof(Campfire), "ApplyCampfireProtection")]
+    [HarmonyPrefix]
+    static bool CampfireProtectionPrefix(Campfire __instance)
+    {
+        if (!VersusLocal.LocalFireFrozen) { return true; }
+        if (Singleton<OrbFogHandler>.Instance) { Singleton<OrbFogHandler>.Instance.PlayersAreResting = __instance.EveryoneInRange(); }
+        return false;
+    }
+
+    // Lighting a fire heals a bit of injury: undo it for the trapped team.
+    [HarmonyPatch(typeof(Campfire), "Update")]
+    [HarmonyPrefix]
+    static void CampfireUpdatePrefix(Campfire __instance, out float[]? __state)
+    {
+        __state = null;
+        Character me = Character.localCharacter;
+        if (me == null || __instance.fireHasStarted || !__instance.Lit || !VersusLocal.LocalFireFrozen) { return; }
+        CharacterAfflictions afflictions = me.refs.afflictions;
+        __state = new[] { afflictions.GetCurrentStatus(CharacterAfflictions.STATUSTYPE.Injury), afflictions.GetCurrentStatus(CharacterAfflictions.STATUSTYPE.Petrify) };
+    }
+
+    [HarmonyPatch(typeof(Campfire), "Update")]
+    [HarmonyPostfix]
+    static void CampfireUpdatePostfix(float[]? __state)
+    {
+        Character me = Character.localCharacter;
+        if (__state == null || me == null) { return; }
+        CharacterAfflictions afflictions = me.refs.afflictions;
+        afflictions.SetStatus(CharacterAfflictions.STATUSTYPE.Injury, __state[0]);
+        afflictions.SetStatus(CharacterAfflictions.STATUSTYPE.Petrify, __state[1]);
     }
 
     // ---------- Versus items ----------

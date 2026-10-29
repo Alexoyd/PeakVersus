@@ -10,6 +10,7 @@ public enum TrapType
     SpringLog = 2,    // éjection immédiate, puis secousses
     Famine = 3,       // la faim monte doucement
     TellTaleSmoke = 4, // la position de l'équipe est révélée aux adversaires
+    FrozenFire = 5,   // les feux ne réchauffent ni ne soignent plus l'équipe
 }
 
 public enum BiomeModifier
