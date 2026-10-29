@@ -14,6 +14,7 @@ public enum VersusItemKind
     Magnifier = 3,
     Incense = 4,
     CampfireTrap = 5,
+    Relic = 6,
 }
 
 // Versus items are vanilla items tagged with a custom key in their instance data.
@@ -33,6 +34,7 @@ public static class VersusItems
         VersusItemKind.Magnifier => "Loupe",
         VersusItemKind.Incense => "Encens du retour",
         VersusItemKind.CampfireTrap => "Piège de feu",
+        VersusItemKind.Relic => "Relique",
         _ => "",
     };
 
@@ -43,6 +45,7 @@ public static class VersusItems
         VersusItemKind.Magnifier => "Tenue en main : révèle cordes sabotées, pitons défectueux et feux piégés. Dans l'inventaire : désamorce les pièges de feu.",
         VersusItemKind.Incense => "Maintenir [clic gauche] 10 s : ranime un joueur mort à l'endroit de sa mort.",
         VersusItemKind.CampfireTrap => "[Clic gauche] près d'un feu : le piège pour l'équipe adverse.",
+        VersusItemKind.Relic => "Rapporte-la à un feu de camp : +2 pts. On peut te la voler.",
         _ => "",
     };
 
@@ -53,6 +56,7 @@ public static class VersusItems
         VersusItemKind.Magnifier => new Color(1f, 0.85f, 0.2f),
         VersusItemKind.Incense => new Color(0.65f, 0.3f, 1f),
         VersusItemKind.CampfireTrap => new Color(1f, 0.5f, 0.1f),
+        VersusItemKind.Relic => new Color(0.2f, 1f, 0.9f),
         _ => null,
     };
 
@@ -93,6 +97,11 @@ public static class VersusItems
         return HeldKind(character) == kind;
     }
 
+    public static bool HasNoVanillaUse(VersusItemKind kind)
+    {
+        return kind == VersusItemKind.Scissors || kind == VersusItemKind.Incense || kind == VersusItemKind.CampfireTrap || kind == VersusItemKind.Relic;
+    }
+
     public static bool HasBingBong(Character character)
     {
         Player player = character.player;
@@ -130,6 +139,7 @@ public static class VersusItems
             VersusItemKind.Magnifier => [i => i.GetComponent<Actions_Binoculars>() != null, i => i.GetComponent<Action_ShowBinocularOverlay>() != null],
             VersusItemKind.Incense => [i => i.GetComponent<Action_LightCandle>() != null, i => i.GetComponent<Action_LightLantern>() != null],
             VersusItemKind.CampfireTrap => [i => i.GetComponent<Action_Guidebook>() != null, i => i.GetComponent<Action_Passport>() != null, i => i.GetComponentInChildren<CompassPointer>(true) != null],
+            VersusItemKind.Relic => [i => i.GetComponent<Action_StrangeGem>() != null, i => i.GetComponentInChildren<CompassPointer>(true) != null],
             _ => [],
         };
         foreach (Func<Item, bool> matcher in matchers)

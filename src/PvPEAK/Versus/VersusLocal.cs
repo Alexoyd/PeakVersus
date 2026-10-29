@@ -53,6 +53,10 @@ public class VersusLocal : MonoBehaviour
     public bool scissorsSabotage;
     Rope? scissorsRope;
     float nextTint;
+    bool runSetupDone;
+    float groundedSince = -1f;
+    float runStartTime = -1f;
+    float nextRelicCheck;
     readonly HashSet<int> tintedItems = new();
     float ropeTimer;
     bool ropeCracked;
@@ -90,6 +94,9 @@ public class VersusLocal : MonoBehaviour
         deathPosition.Clear();
         if (Instance == null) { return; }
         Instance.reportedArrivals.Clear();
+        Instance.runSetupDone = false;
+        Instance.groundedSince = -1f;
+        Instance.runStartTime = -1f;
         Instance.helpTimers.Clear();
         Instance.helpReportedAt.Clear();
         Instance.mission = null;
@@ -105,7 +112,37 @@ public class VersusLocal : MonoBehaviour
         return keyboard[key].wasPressedThisFrame;
     }
 
-    public static bool InTruce(Vector3 position) => Utility.DistanceToCampfire(position, out Campfire _) <= VersusGame.TruceRadius;
+    public static bool InTruce(Vector3 position) => StartTruceLeft > 0f || NearCampfire(position);
+
+    public static bool NearCampfire(Vector3 position) => Utility.DistanceToCampfire(position, out Campfire _) <= VersusGame.TruceRadius;
+
+    // Same-spawn games start with a short truce so nobody gets shoved off the beach at second one.
+    public static float StartTruceLeft
+    {
+        get
+        {
+            if (Instance == null || Instance.runStartTime < 0f || VersusGame.State.options.spawnSeparated) { return 0f; }
+            return Mathf.Max(0f, VersusGame.State.options.startTruceSeconds - (Time.time - Instance.runStartTime));
+        }
+    }
+
+    static bool inAirportCached;
+    static float inAirportCheckedAt = -10f;
+
+    public static bool InAirport
+    {
+        get
+        {
+            if (Time.time - inAirportCheckedAt > 1f)
+            {
+                inAirportCheckedAt = Time.time;
+                inAirportCached = FindFirstObjectByType<AirportCheckInKiosk>() != null;
+            }
+            return inAirportCached;
+        }
+    }
+
+    public static float SecondsSinceRunStart => Instance == null || Instance.runStartTime < 0f ? -1f : Time.time - Instance.runStartTime;
 
     static float StaminaFraction(Character character)
     {
@@ -130,6 +167,7 @@ public class VersusLocal : MonoBehaviour
         // God and chronicle keys work as soon as a run exists, even outside Versus for solo testing.
         if (KeyPressed(Plugin.ConfigurationHandler.GodMenuKey)) { VersusHud.ToggleGod(); }
         if (KeyPressed(Plugin.ConfigurationHandler.ChronicleKey)) { VersusHud.ToggleChronicle(); }
+        if (KeyPressed(Plugin.ConfigurationHandler.OptionsKey)) { VersusHud.ToggleOptions(); }
 
         UpdateTints();
         Character me = Character.localCharacter;
@@ -145,10 +183,11 @@ public class VersusLocal : MonoBehaviour
 
         if (Time.time > nextMasterTick)
         {
-            nextMasterTick = Time.time + 5f;
+            nextMasterTick = Time.time + 1f;
             VersusGame.MasterTick();
         }
 
+        UpdateRunSetup(me);
         if (mission == null) { AssignMission(); }
 
         if (KeyPressed(Plugin.ConfigurationHandler.ShopKey)) { VersusHud.ToggleShop(); }
@@ -164,6 +203,7 @@ public class VersusLocal : MonoBehaviour
         UpdateSabotagedRope(me);
         UpdateDefectivePiton(me);
         UpdateArrivals(me);
+        UpdateRelicDeposit(me);
         UpdateEffects(me);
         UpdateMissions(me);
 
@@ -607,6 +647,80 @@ public class VersusLocal : MonoBehaviour
             if (hasBingBong) { CompleteMission(MissionType.BringBingBong); }
             // A new biome starts: new secret mission.
             mission = null;
+        }
+    }
+
+    // ---------- run start: separate spawns, start truce, first relics ----------
+
+    static List<string> CurrentTeams()
+    {
+        return PlayerHandler.GetAllPlayerCharacters().Where(c => c != null && !c.isBot).Select(VersusGame.TeamKey).Where(t => t != "").Distinct().OrderBy(t => t).ToList();
+    }
+
+    void UpdateRunSetup(Character me)
+    {
+        if (runSetupDone || !Plugin.IsAfterAwake || InAirport) { return; }
+        if (!me.data.isGrounded)
+        {
+            groundedSince = -1f;
+            return;
+        }
+        if (groundedSince < 0f) { groundedSince = Time.time; }
+        if (Time.time - groundedSince < 3f) { return; }
+        runSetupDone = true;
+        runStartTime = Time.time;
+
+        VersusOptions options = VersusGame.State.options;
+        if (options.spawnSeparated && CurrentTeams().IndexOf(MyTeam) == 1)
+        {
+            WarpAwayFromOtherTeam(me);
+        }
+        else if (!options.spawnSeparated)
+        {
+            VersusHud.Toast($"Trêve de départ : pas d'attaque pendant {options.startTruceSeconds} s", 6f);
+        }
+        if (VersusGame.IsMaster)
+        {
+            VersusGame.SpawnRelicsForFirstBiome(me.Center);
+        }
+    }
+
+    static void WarpAwayFromOtherTeam(Character me)
+    {
+        foreach (float offset in new[] { 70f, -70f, 50f, -50f, 35f, -35f })
+        {
+            Vector3 probe = me.Center + Vector3.right * offset + Vector3.up * 100f;
+            RaycastHit hit = HelperFunctions.GetGroundPosRaycast(probe, HelperFunctions.LayerType.TerrainMap);
+            if (hit.transform == null || Mathf.Abs(hit.point.y - me.Center.y) > 25f) { continue; }
+            me.photonView.RPC("WarpPlayerRPC", RpcTarget.All, hit.point + Vector3.up, true);
+            VersusHud.Toast("Spawn séparé : ton équipe part d'un autre point de la plage", 5f);
+            return;
+        }
+        VersusHud.Toast("Pas de point de départ séparé trouvé : vous partez avec l'autre équipe", 5f);
+    }
+
+    // ---------- relics ----------
+
+    void UpdateRelicDeposit(Character me)
+    {
+        if (Time.time < nextRelicCheck) { return; }
+        nextRelicCheck = Time.time + 0.5f;
+        if (!NearCampfire(me.Center) || me.player == null) { return; }
+        int count = 0;
+        Optionable<byte> selected = me.refs.items.currentSelectedSlot;
+        foreach (ItemSlot slot in me.player.itemSlots)
+        {
+            if (slot.IsEmpty() || VersusItems.GetKind(slot.data) != VersusItemKind.Relic) { continue; }
+            if (selected.IsSome && selected.Value == slot.itemSlotID)
+            {
+                me.refs.items.EquipSlot(Optionable<byte>.None);
+            }
+            me.player.EmptySlot(Optionable<byte>.Some(slot.itemSlotID));
+            count++;
+        }
+        if (count > 0)
+        {
+            VersusNet.ToMaster(nameof(VersusNet.RPC_DepositRelics), VersusGame.LocalUser, count);
         }
     }
 

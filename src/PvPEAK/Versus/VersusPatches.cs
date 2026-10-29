@@ -61,7 +61,7 @@ public class VersusPatches
     static bool CanUsePrimaryPrefix(Item __instance, ref bool __result)
     {
         VersusItemKind kind = VersusItems.GetKind(__instance);
-        if (kind == VersusItemKind.Scissors || kind == VersusItemKind.Incense || kind == VersusItemKind.CampfireTrap)
+        if (VersusItems.HasNoVanillaUse(kind))
         {
             __result = false;
             return false;
@@ -74,7 +74,7 @@ public class VersusPatches
     static bool CanUseSecondaryPrefix(Item __instance, ref bool __result)
     {
         VersusItemKind kind = VersusItems.GetKind(__instance);
-        if (kind == VersusItemKind.Scissors || kind == VersusItemKind.Incense || kind == VersusItemKind.CampfireTrap)
+        if (VersusItems.HasNoVanillaUse(kind))
         {
             __result = false;
             return false;
@@ -223,6 +223,42 @@ public class VersusPatches
         {
             visible = false;
         }
+    }
+
+    // ---------- rising hazard vote ----------
+
+    [HarmonyPatch(typeof(OrbFogHandler), "Move")]
+    [HarmonyPrefix]
+    static bool FogMovePrefix() => !(VersusGame.Active && VersusGame.State.hazardMode == HazardMode.Paused);
+
+    [HarmonyPatch(typeof(OrbFogHandler), "Move")]
+    [HarmonyPostfix]
+    static void FogMovePostfix(OrbFogHandler __instance)
+    {
+        if (VersusGame.Active && VersusGame.State.hazardMode == HazardMode.Rising)
+        {
+            __instance.currentSize -= __instance.speed * Time.deltaTime * 0.5f;
+        }
+    }
+
+    [HarmonyPatch(typeof(OrbFogHandler), "WaitToMove")]
+    [HarmonyPrefix]
+    static bool FogWaitPrefix() => !(VersusGame.Active && VersusGame.State.hazardMode == HazardMode.Paused);
+
+    [HarmonyPatch(typeof(LavaRising), "Update")]
+    [HarmonyPrefix]
+    static bool LavaUpdatePrefix() => !(VersusGame.Active && VersusGame.State.hazardMode == HazardMode.Paused);
+
+    // ---------- shorter runs: the last campfire acts as the summit ----------
+
+    [HarmonyPatch(typeof(Character), nameof(Character.CheckWinCondition))]
+    [HarmonyPrefix]
+    [HarmonyPriority(Priority.First)]
+    static bool CheckWinConditionPrefix(Character c, ref bool __result)
+    {
+        if (!VersusGame.Active || VersusGame.State.finalCampfire < 0) { return true; }
+        __result = !c.data.dead && VersusGame.NearFinalCampfire(c);
+        return false;
     }
 
     // ---------- end of game ----------

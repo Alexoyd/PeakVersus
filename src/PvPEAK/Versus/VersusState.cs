@@ -23,6 +23,22 @@ public enum BiomeModifier
     TrapSale = 6,   // pièges de feu à moitié prix
 }
 
+public enum HazardMode
+{
+    Vanilla = 0,
+    Rising = 1,
+    Paused = 2,
+}
+
+// Host settings, kept across games in the same lobby.
+public class VersusOptions
+{
+    public bool spawnSeparated = false;
+    public int biomes = 0;              // 0 = all the way to the peak, otherwise stop after N biomes
+    public bool carryScores = false;
+    public int startTruceSeconds = 90;  // same-spawn mode only
+}
+
 public class DebtRecord
 {
     public string debtor = "";
@@ -64,6 +80,18 @@ public class VersusState
     public bool incenseSold = false;
     public bool soloTest = false;
     public bool finished = false;
+    public VersusOptions options = new();
+
+    // Rising hazard vote, opened at each new campfire
+    public HazardMode hazardMode = HazardMode.Vanilla;
+    public int voteCampfire = -1;
+    public double voteDeadline;
+    public Dictionary<string, bool> votes = new();
+    public Dictionary<string, int> extraVotes = new();
+
+    // Early finish when the run is shorter than the whole mountain
+    public int finalCampfire = -1;
+    public double finalCountdownEnd;
     public float highestFall = 0f;
     public string highestFallBy = "";
 

@@ -15,6 +15,8 @@ public class VersusHud : MonoBehaviour
     bool shopOpen;
     bool godOpen;
     bool chronicleOpen;
+    bool optionsOpen;
+    Rect optionsRect = new(440, 80, 420, 380);
     bool infiniteStamina;
     string vanillaFilter = "";
     Vector2 godScroll;
@@ -41,7 +43,7 @@ public class VersusHud : MonoBehaviour
     {
         if (instance == null) { return; }
         Character me = Character.localCharacter;
-        if (!instance.shopOpen && (me == null || !VersusLocal.InTruce(me.Center)))
+        if (!instance.shopOpen && (me == null || !VersusLocal.NearCampfire(me.Center)))
         {
             Toast("La boutique n'est ouverte qu'aux feux de camp", 2f);
             return;
@@ -55,20 +57,26 @@ public class VersusHud : MonoBehaviour
         instance.godOpen = !instance.godOpen;
     }
 
+    public static void ToggleOptions()
+    {
+        if (instance == null) { return; }
+        instance.optionsOpen = !instance.optionsOpen;
+    }
+
     public static void ToggleChronicle()
     {
         if (instance == null) { return; }
         instance.chronicleOpen = !instance.chronicleOpen;
     }
 
-    bool AnyWindowOpen => shopOpen || godOpen || chronicleOpen;
+    bool AnyWindowOpen => shopOpen || godOpen || chronicleOpen || optionsOpen;
     public static bool IsAnyWindowOpen => instance != null && instance.AnyWindowOpen;
 
     void Update()
     {
         toasts.RemoveAll(t => Time.time > t.until);
         Character me = Character.localCharacter;
-        if (shopOpen && (me == null || !VersusLocal.InTruce(me.Center))) { shopOpen = false; }
+        if (shopOpen && (me == null || !VersusLocal.NearCampfire(me.Center))) { shopOpen = false; }
         if (infiniteStamina && me != null && !me.data.dead) { me.AddStamina(1f); }
         if (VersusGame.State.finished) { chronicleOpen = true; }
     }
@@ -90,6 +98,11 @@ public class VersusHud : MonoBehaviour
         EnsureStyles();
         DrawToasts();
         if (godOpen) { godRect = GUILayout.Window(98401, godRect, DrawGod, "PEAK Versus — menu de test"); }
+        if (optionsOpen) { optionsRect = GUILayout.Window(98404, optionsRect, DrawOptions, "PEAK Versus — options de partie"); }
+        if (VersusGame.Active && (VersusLocal.InAirport || (VersusLocal.SecondsSinceRunStart >= 0f && VersusLocal.SecondsSinceRunStart < 40f)))
+        {
+            DrawTeamRoster();
+        }
 
         Character me = Character.localCharacter;
         if (me == null || !VersusGame.Active) { return; }
@@ -125,6 +138,18 @@ public class VersusHud : MonoBehaviour
             $"Tes points : <b>{state.Wallet(user)}</b>   Cagnotte d'équipe : <b>{state.Pot(team)}</b>",
             $"Biome : {VersusGame.ModifierName(state.modifier)}",
         };
+        if (state.hazardMode != HazardMode.Vanilla) { lines.Add(state.hazardMode == HazardMode.Rising ? "<color=#ff7744>Danger : il monte (accéléré)</color>" : "<color=#88ccff>Danger : figé</color>"); }
+        if (state.voteCampfire >= 0)
+        {
+            string myVote = state.votes.TryGetValue(user, out bool yes) ? (yes ? "tu as voté OUI" : "tu as voté NON") : $"vote à la boutique [{Plugin.ConfigurationHandler.ShopKey}]";
+            lines.Add($"<color=#ffee55>VOTE en cours ({System.Math.Max(0, state.voteDeadline - VersusGame.Now):0} s) : {myVote}</color>");
+        }
+        float truce = VersusLocal.StartTruceLeft;
+        if (truce > 0f) { lines.Add($"<color=#88ff88>Trêve de départ : {truce:0} s</color>"); }
+        if (state.finalCampfire >= 0 && !state.finished)
+        {
+            lines.Add($"<color=#ff5555><b>FIN DANS {System.Math.Max(0, state.finalCountdownEnd - VersusGame.Now):0} s</b> : reste près du dernier feu !</color>");
+        }
         foreach (DebtRecord debt in state.debts.Where(d => d.debtor == user)) { lines.Add($"<color=#ffcc66>Tu dois une faveur à {state.NameOf(debt.creditor)}</color>"); }
         foreach (DebtRecord debt in state.debts.Where(d => d.creditor == user)) { lines.Add($"{state.NameOf(debt.debtor)} te doit une faveur"); }
         foreach (TrapRecord trap in state.traps.Where(t => t.team == team))
@@ -144,7 +169,7 @@ public class VersusHud : MonoBehaviour
             lines.Add($"{(VersusLocal.Instance.scissorsSabotage ? "Sabotage" : "Coupe")} : {VersusLocal.Instance.scissorsProgress:0.0} / {(VersusLocal.Instance.scissorsSabotage ? 3 : 2)} s");
         }
         if (VersusLocal.Instance != null && VersusLocal.Instance.incenseProgress > 0f) { lines.Add($"Incantation : {VersusLocal.Instance.incenseProgress:0.0} / 10 s"); }
-        lines.Add($"<size=12>[{Plugin.ConfigurationHandler.PushKey}] pousser  [{Plugin.ConfigurationHandler.AnkleKey}] cheville  [{Plugin.ConfigurationHandler.ShopKey}] boutique  [{Plugin.ConfigurationHandler.ChronicleKey}] scores</size>");
+        lines.Add($"<size=12>[{Plugin.ConfigurationHandler.PushKey}] pousser  [{Plugin.ConfigurationHandler.AnkleKey}] cheville  [{Plugin.ConfigurationHandler.ShopKey}] boutique  [{Plugin.ConfigurationHandler.ChronicleKey}] scores  [{Plugin.ConfigurationHandler.OptionsKey}] options</size>");
         string text = string.Join("\n", lines);
         float height = boxStyle!.CalcHeight(new GUIContent(text), 420f) + 8f;
         GUI.Box(new Rect(12f, 12f, 420f, height), text, boxStyle);
@@ -180,9 +205,20 @@ public class VersusHud : MonoBehaviour
         Character me = Character.localCharacter;
         string team = me != null ? VersusGame.TeamKey(me) : "";
         GUILayout.Label($"Tes points : <b>{state.Wallet(user)}</b>   Cagnotte d'équipe : <b>{state.Pot(team)}</b>", labelStyle);
+        if (state.voteCampfire >= 0)
+        {
+            GUILayout.Label(state.hazardMode == HazardMode.Rising ? "<b>VOTE : le danger continue de monter ?</b>" : "<b>VOTE : le danger (brume ou lave) doit-il monter ?</b>", labelStyle);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Oui, qu'il monte")) { VersusNet.ToMaster(nameof(VersusNet.RPC_Vote), user, true); }
+            if (GUILayout.Button("Non, figé")) { VersusNet.ToMaster(nameof(VersusNet.RPC_Vote), user, false); }
+            GUILayout.EndHorizontal();
+            GUILayout.Label($"{state.votes.Count} vote(s) sur {state.playerTeams.Count}", labelStyle);
+            GUILayout.Space(6);
+        }
         foreach (VersusProduct product in System.Enum.GetValues(typeof(VersusProduct)))
         {
             if (product == VersusProduct.Incense && state.incenseSold) { continue; }
+            if (product == VersusProduct.ExtraVote && state.voteCampfire < 0) { continue; }
             string source = VersusGame.PaidByTeam(product) ? " (équipe)" : "";
             if (GUILayout.Button($"{VersusGame.ProductName(product)} — {VersusGame.Price(product)} pts{source}"))
             {
@@ -225,6 +261,58 @@ public class VersusHud : MonoBehaviour
         GUI.DragWindow();
     }
 
+    void DrawTeamRoster()
+    {
+        List<IGrouping<string, Character>> teams = PlayerHandler.GetAllPlayerCharacters()
+            .Where(c => c != null && !c.isBot)
+            .GroupBy(c => ColorUtility.ToHtmlStringRGB(c.refs.customization.PlayerColor))
+            .ToList();
+        List<string> lines = new() { "<b>Équipes détectées</b> (même couleur de scout = même équipe)" };
+        foreach (IGrouping<string, Character> team in teams)
+        {
+            string names = string.Join(", ", team.Select(c => c.photonView.Owner.NickName));
+            string warning = team.Count() > 2 ? "  <color=#ff5555>trop de joueurs !</color>" : "";
+            lines.Add($"<color=#{team.Key}>Équipe {VersusGame.ColorName(team.Key)}</color> : {names}{warning}");
+        }
+        if (teams.Count < 2) { lines.Add("<color=#ffaa55>Il faut au moins 2 couleurs de scout différentes pour un versus.</color>"); }
+        string text = string.Join("\n", lines);
+        float height = boxStyle!.CalcHeight(new GUIContent(text), 420f) + 8f;
+        GUI.Box(new Rect(Screen.width - 432f, 12f, 420f, height), text, boxStyle);
+    }
+
+    void DrawOptions(int id)
+    {
+        VersusOptions options = VersusGame.State.options;
+        bool host = PhotonNetwork.IsMasterClient;
+        GUILayout.Label(host ? "Tu es l'hôte : ces réglages s'appliquent à la prochaine partie." : "Seul l'hôte peut modifier ces réglages.", labelStyle);
+        GUI.enabled = host;
+        bool separated = GUILayout.Toggle(options.spawnSeparated, "Spawns séparés (sinon : même zone avec trêve de départ)");
+        GUILayout.Label($"Trêve de départ (même zone) : {options.startTruceSeconds} s", labelStyle);
+        int truce = Mathf.RoundToInt(GUILayout.HorizontalSlider(options.startTruceSeconds, 0, 300) / 15f) * 15;
+        GUILayout.Label(options.biomes <= 0 ? "Durée : jusqu'au sommet (partie complète)" : $"Durée : {options.biomes} biome(s), le dernier feu fait office de sommet", labelStyle);
+        GUILayout.BeginHorizontal();
+        int biomes = options.biomes;
+        if (GUILayout.Button("1")) { biomes = 1; }
+        if (GUILayout.Button("2")) { biomes = 2; }
+        if (GUILayout.Button("3")) { biomes = 3; }
+        if (GUILayout.Button("4")) { biomes = 4; }
+        if (GUILayout.Button("Sommet")) { biomes = 0; }
+        GUILayout.EndHorizontal();
+        bool carry = GUILayout.Toggle(options.carryScores, "Garder les scores d'une partie à l'autre");
+        GUI.enabled = true;
+        if (host && (separated != options.spawnSeparated || truce != options.startTruceSeconds || biomes != options.biomes || carry != options.carryScores))
+        {
+            VersusOptions next = new() { spawnSeparated = separated, startTruceSeconds = truce, biomes = biomes, carryScores = carry };
+            VersusGame.State.options = next;
+            VersusNet.ToMaster(nameof(VersusNet.RPC_SetOptions), Newtonsoft.Json.JsonConvert.SerializeObject(next));
+        }
+        GUILayout.Space(6);
+        bool teamVoice = GUILayout.Toggle(Plugin.ConfigurationHandler.TeamVoiceInGame, "Entendre mon coéquipier en jeu (décoche si vous êtes sur Discord)");
+        if (teamVoice != Plugin.ConfigurationHandler.TeamVoiceInGame) { Plugin.ConfigurationHandler.ConfigTeamVoiceInGame.Value = teamVoice; }
+        if (GUILayout.Button("Fermer")) { optionsOpen = false; }
+        GUI.DragWindow();
+    }
+
     void GiveVanillaButton(string label, System.Func<Item, bool> match)
     {
         if (!GUILayout.Button(label)) { return; }
@@ -259,7 +347,7 @@ public class VersusHud : MonoBehaviour
         }
         GUILayout.EndHorizontal();
         GUILayout.BeginHorizontal();
-        foreach (VersusItemKind kind in new[] { VersusItemKind.Incense, VersusItemKind.CampfireTrap })
+        foreach (VersusItemKind kind in new[] { VersusItemKind.Incense, VersusItemKind.CampfireTrap, VersusItemKind.Relic })
         {
             if (GUILayout.Button(VersusItems.DisplayName(kind))) { VersusNet.ToMaster(nameof(VersusNet.RPC_GodGive), user, (int)kind); }
         }

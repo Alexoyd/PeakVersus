@@ -16,9 +16,11 @@ public enum VersusProduct
     CampfireTrap = 4,
     RerollModifier = 5,
     Incense = 6,
+    ReserveCampfire = 7,
+    ExtraVote = 8,
 }
 
-public static class VersusGame
+public static partial class VersusGame
 {
     public const float TruceRadius = 15f;
     public const float BetrayalWindow = 15f;
@@ -76,7 +78,14 @@ public static class VersusGame
 
     public static void Reset()
     {
-        State = new VersusState();
+        VersusState previous = State;
+        State = new VersusState { options = previous.options };
+        if (previous.options.carryScores)
+        {
+            State.wallets = previous.wallets;
+            State.teamPots = previous.teamPots;
+            if (previous.wallets.Count > 0) { State.chronicle.Add("Scores repris de la partie précédente"); }
+        }
         lastHelp.Clear();
     }
 
@@ -186,6 +195,8 @@ public static class VersusGame
         {
             State.modifier = RollModifier();
             Announce($"Nouveau biome — {ModifierName(State.modifier)}", 8f);
+            OpenHazardVote(campfire);
+            SpawnRelicsAfter(campfire);
         }
 
         if (alive)
@@ -221,6 +232,7 @@ public static class VersusGame
                 {
                     State.teamPots[team] = State.Pot(team) + 1;
                     Announce($"{TeamName(team)} arrive complète la première : +1 pt d'équipe", 5f);
+                    TryStartFinalCountdown(campfire, weight);
                 }
                 else
                 {
@@ -280,10 +292,19 @@ public static class VersusGame
     public static void MasterTick()
     {
         if (!IsMaster) { return; }
-        if (State.effects.RemoveAll(e => Now - e.start >= TrapMaxSeconds) > 0)
+        bool changed = State.effects.RemoveAll(e => Now - e.start >= TrapMaxSeconds) > 0;
+        if (State.voteCampfire >= 0 && Now >= State.voteDeadline)
         {
-            Broadcast();
+            CloseHazardVote();
+            changed = true;
         }
+        if (State.finalCampfire >= 0 && !State.finished && Now >= State.finalCountdownEnd)
+        {
+            MasterEndGame();
+            Character.localCharacter?.EndGame();
+            return;
+        }
+        if (changed) { Broadcast(); }
     }
 
     public static void MasterHelp(string helper, string target, bool inDanger)
@@ -367,10 +388,12 @@ public static class VersusGame
         VersusProduct.CampfireTrap => State.modifier == BiomeModifier.TrapSale ? 2 : 4,
         VersusProduct.RerollModifier => 4,
         VersusProduct.Incense => 10,
+        VersusProduct.ReserveCampfire => 3,
+        VersusProduct.ExtraVote => 3,
         _ => 99,
     };
 
-    public static bool PaidByTeam(VersusProduct product) => product == VersusProduct.CampfireTrap || product == VersusProduct.RerollModifier;
+    public static bool PaidByTeam(VersusProduct product) => product == VersusProduct.CampfireTrap || product == VersusProduct.RerollModifier || product == VersusProduct.ReserveCampfire;
 
     public static string ProductName(VersusProduct product) => product switch
     {
@@ -381,6 +404,8 @@ public static class VersusGame
         VersusProduct.CampfireTrap => "Piège de feu",
         VersusProduct.RerollModifier => "Relancer le modificateur",
         VersusProduct.Incense => "Encens du retour",
+        VersusProduct.ReserveCampfire => "Réserver le feu (soin pour toute l'équipe)",
+        VersusProduct.ExtraVote => "Vote supplémentaire",
         _ => "?",
     };
 
@@ -393,6 +418,11 @@ public static class VersusGame
         if (product == VersusProduct.Incense && State.incenseSold)
         {
             Announce("L'encens du retour a déjà été vendu dans cette partie", 4f, user);
+            return;
+        }
+        if (product == VersusProduct.ExtraVote && (State.voteCampfire < 0 || State.extraVotes.ContainsKey(user)))
+        {
+            Announce(State.voteCampfire < 0 ? "Aucun vote en cours" : "Un seul vote supplémentaire par vote", 3f, user);
             return;
         }
         bool fromTeam = PaidByTeam(product);
@@ -408,6 +438,13 @@ public static class VersusGame
         {
             case VersusProduct.Heal:
                 VersusNet.ToAll(nameof(VersusNet.RPC_ApplyHeal), user);
+                break;
+            case VersusProduct.ReserveCampfire:
+                foreach (string member in TeamMembers(team)) { VersusNet.ToAll(nameof(VersusNet.RPC_ApplyHeal), member); }
+                Announce($"{TeamName(team)} a réservé le feu : toute l'équipe est soignée", 5f);
+                break;
+            case VersusProduct.ExtraVote:
+                State.extraVotes[user] = 1;
                 break;
             case VersusProduct.RerollModifier:
                 State.modifier = RollModifier();

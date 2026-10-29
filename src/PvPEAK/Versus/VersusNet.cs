@@ -128,4 +128,8 @@ public class VersusNet : MonoBehaviourPun
     [PunRPC] public void RPC_GodPoints(string user, int amount) => VersusGame.MasterGodPoints(user, amount);
     [PunRPC] public void RPC_GodSoloTest(bool on) => VersusGame.MasterSoloTest(on);
     [PunRPC] public void RPC_GodModifier(int modifier) => VersusGame.MasterSetModifier((BiomeModifier)modifier);
+    [PunRPC] public void RPC_Vote(string user, bool yes) => VersusGame.MasterVote(user, yes);
+    [PunRPC] public void RPC_DepositRelics(string user, int count) => VersusGame.MasterDepositRelics(user, count);
+    [PunRPC] public void RPC_SpawnFirstRelics(Vector3 spawn) { if (VersusGame.IsMaster) { VersusGame.SpawnRelicsForFirstBiome(spawn); } }
+    [PunRPC] public void RPC_SetOptions(string json) => VersusGame.MasterSetOptions(JsonConvert.DeserializeObject<VersusOptions>(json) ?? new VersusOptions());
 }
