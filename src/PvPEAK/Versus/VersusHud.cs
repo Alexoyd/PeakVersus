@@ -127,6 +127,12 @@ public class VersusHud : MonoBehaviour
         };
         foreach (DebtRecord debt in state.debts.Where(d => d.debtor == user)) { lines.Add($"<color=#ffcc66>Tu dois une faveur à {state.NameOf(debt.creditor)}</color>"); }
         foreach (DebtRecord debt in state.debts.Where(d => d.creditor == user)) { lines.Add($"{state.NameOf(debt.debtor)} te doit une faveur"); }
+        foreach (TrapRecord trap in state.traps.Where(t => t.team == team))
+        {
+            Campfire? campfire = Plugin.CampfireList.FirstOrDefault(c => c != null && VersusLocal.CampfireID(c) == trap.campfire);
+            string where = campfire != null ? $" à {Vector3.Distance(campfire.transform.position, me.Center) * CharacterStats.unitsToMeters:0} m" : "";
+            lines.Add($"<color=#ffaa55>Ton équipe a piégé un feu{where} : « {VersusGame.TrapName(trap.type)} »</color>");
+        }
         foreach (EffectRecord effect in state.effects.Where(e => e.team == team)) { lines.Add($"<color=#ff8866>Piège subi : {VersusGame.TrapName(effect.type)}</color>"); }
         if (state.IsPerjured(user)) { lines.Add("<color=#ff4444><b>PARJURE</b> jusqu'au prochain feu</color>"); }
         if (VersusLocal.Instance?.mission is MissionType mission) { lines.Add($"<color=#aaddff>Mission secrète : {VersusLocal.MissionText(mission)}</color>"); }

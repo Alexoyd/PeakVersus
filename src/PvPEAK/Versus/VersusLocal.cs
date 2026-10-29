@@ -505,7 +505,7 @@ public class VersusLocal : MonoBehaviour
             Campfire? campfire = Plugin.CampfireList.FirstOrDefault(c => c != null && CampfireID(c) == trap.campfire);
             if (campfire == null) { continue; }
             float distance = Vector3.Distance(campfire.transform.position, me.Center) * CharacterStats.unitsToMeters;
-            if (distance <= 80f) { magnifierLines.Add($"Feu piégé à {distance:0} m{(trap.team == myTeam ? " (ton piège)" : "")}"); }
+            if (distance <= 80f) { magnifierLines.Add($"Feu piégé à {distance:0} m : « {VersusGame.TrapName(trap.type)} »{(trap.team == myTeam ? " (ton piège)" : "")}"); }
         }
         if (magnifierLines.Count == 0) { magnifierLines.Add("Rien de suspect à proximité"); }
     }
